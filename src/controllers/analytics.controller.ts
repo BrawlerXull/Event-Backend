@@ -31,7 +31,13 @@ const analyticsController = {
    */
   async getTopEvents(req: Request, res: Response, next: NextFunction) {
     try {
-      const limit = parseInt((req.validatedQuery?.limit as string) || req.query.limit || "10", 10);
+      // Safely cast query param to string before parsing
+      const rawLimit =
+        (req.validatedQuery?.limit as string) ||
+        (req.query.limit as string) ||
+        "10";
+
+      const limit = parseInt(rawLimit, 10);
       if (isNaN(limit) || limit <= 0) {
         throw new ApiError(400, "INVALID_PARAM", "Limit must be a positive integer");
       }

@@ -1,46 +1,62 @@
 /**
- * Event Routes
+ * Event Controller
  *
- * Handles listing and retrieving events.
- *
- * Mount in app.ts:
- *   import eventRouter from "./routes/event.route";
- *   app.use("/api/events", eventRouter);
+ * Handles event-level operations including creating,
+ * listing events, retrieving single event details,
+ * and applying filters/pagination.
  */
 
-import { Router } from "express";
-import eventController from "../controllers/event.controller";
-import validate from "../middleware/validate.middleware";
-import { requireAuth } from "../middleware/auth.middlware";
-import { z } from "zod";
+import { Request, Response, NextFunction } from "express";
+import eventService from "../services/event.service";
+import { ApiError } from "../utils/errors";
 
-const router = Router();
+const eventController = {
+  /**
+   * Create a new event
+   * POST /api/events
+   */
+  async createEvent(req: Request, res: Response, next: NextFunction) {
+    try {
+      // the service handles validation + persistence
+      const event = await eventService.createEvent(req.body);
+      return res.status(201).json(event);
+    } catch (err) {
+      next(err);
+    }
+  },
 
-/**
- * Optional query validation schema for listing events
- */
-const listEventsQuerySchema = z.object({
-  page: z.string().optional(),
-  limit: z.string().optional(),
-  from: z.string().optional(),
-  to: z.string().optional(),
-  q: z.string().optional(), // search query
-});
+  /**
+   * List events with optional filters and pagination
+   * GET /api/events
+   */
+  async listEvents(req: Request, res: Response, next: NextFunction) {
+    try {
+      const filters = req.validatedQuery || req.query;
+      const events = await eventService.findMany(filters);
+      return res.status(200).json(events);
+    } catch (err) {
+      next(err);
+    }
+  },
 
-/**
- * GET /api/events
- * List events with optional filters & pagination
- */
-router.get(
-  "/",
-  validate({ query: listEventsQuerySchema }),
-  eventController.listEvents
-);
+  /**
+   * Retrieve details for a single event
+   * GET /api/events/:eventId
+   */
+  async getEvent(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { eventId } = req.params;
+      const event = await eventService.findById(eventId);
 
-/**
- * GET /api/events/:eventId
- * Retrieve single event details
- */
-router.get("/:eventId", eventController.getEvent);
+      if (!event) {
+        throw new ApiError(404, "NOT_FOUND", "Event not found");
+      }
 
-export default router;
+      return res.status(200).json(event);
+    } catch (err) {
+      next(err);
+    }
+  },
+};
+
+export default eventController;

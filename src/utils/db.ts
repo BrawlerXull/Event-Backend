@@ -7,8 +7,10 @@ import logger from "./logger";
 
 const prisma = new PrismaClient();
 
-(prisma as any).$on("beforeExit", async () => {
-  logger.info("Prisma beforeExit");
+// Gracefully handle shutdown
+process.on("beforeExit", async () => {
+  logger.info("Process beforeExit: shutting down Prisma");
+  await prisma.$disconnect();
 });
 
 export default prisma;

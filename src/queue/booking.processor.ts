@@ -35,7 +35,9 @@ export function createBookingWorker(): Worker {
       }
     },
     {
-      connection: new IORedis(config.REDIS_URL),
+      connection: new IORedis(config.REDIS_URL,{
+        maxRetriesPerRequest: null, 
+      }),
     }
   );
 

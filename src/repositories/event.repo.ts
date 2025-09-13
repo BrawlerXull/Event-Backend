@@ -11,13 +11,19 @@ const EventRepo = {
   /**
    * Create a new event
    */
-  async create(payload: any) {
-    try {
-      return await prisma.event.create({ data: payload });
-    } catch (err: any) {
-      throw new ApiError(500, "DB_ERROR", err.message);
-    }
-  },
+    async create(payload: any) {
+        try {
+            return await prisma.event.create({
+            data: {
+                ...payload,
+                availableCapacity: payload.capacity, 
+            },
+            });
+        } catch (err: any) {
+            throw new ApiError(500, "DB_ERROR", err.message);
+        }
+    },
+
 
   /**
    * Find event by ID
@@ -31,51 +37,54 @@ const EventRepo = {
   },
 
   /**
-   * Find many events with optional filters and pagination
-   */
-  async findMany({
-    page = 1,
-    limit = 20,
-    from,
-    to,
-    q,
-  }: {
-    page?: number;
-    limit?: number;
-    from?: string;
-    to?: string;
-    q?: string;
-  }) {
-    try {
-      const where: any = {};
+ * Find many events with optional filters and pagination
+ */
+async findMany({
+  page = 1,
+  limit = 20,
+  from,
+  to,
+  q,
+}: {
+  page?: number | string;
+  limit?: number | string;
+  from?: string;
+  to?: string;
+  q?: string;
+}) {
+  try {
+    const pageNum = Number(page) || 1;
+    const limitNum = Number(limit) || 20;
 
-      if (from || to) {
-        where.startTime = {};
-        if (from) where.startTime.gte = new Date(from);
-        if (to) where.startTime.lte = new Date(to);
-      }
+    const where: any = {};
 
-      if (q) {
-        where.OR = [
-          { name: { contains: q, mode: "insensitive" } },
-          { venue: { contains: q, mode: "insensitive" } },
-        ];
-      }
-
-      const events = await prisma.event.findMany({
-        where,
-        skip: (page - 1) * limit,
-        take: limit,
-        orderBy: { startTime: "asc" },
-      });
-
-      const total = await prisma.event.count({ where });
-
-      return { events, total };
-    } catch (err: any) {
-      throw new ApiError(500, "DB_ERROR", err.message);
+    if (from || to) {
+      where.startTime = {};
+      if (from) where.startTime.gte = new Date(from);
+      if (to) where.startTime.lte = new Date(to);
     }
-  },
+
+    if (q) {
+      where.OR = [
+        { name: { contains: q, mode: "insensitive" } },
+        { venue: { contains: q, mode: "insensitive" } },
+      ];
+    }
+
+    const events = await prisma.event.findMany({
+      where,
+      skip: (pageNum - 1) * limitNum,
+      take: limitNum,
+      orderBy: { startTime: "asc" },
+    });
+
+    const total = await prisma.event.count({ where });
+
+    return { events, total };
+  } catch (err: any) {
+    throw new ApiError(500, "DB_ERROR", err.message);
+  }
+},
 
   /**
    * Update an event by ID
