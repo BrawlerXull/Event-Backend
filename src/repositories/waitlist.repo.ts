@@ -16,7 +16,7 @@ const WaitlistRepo = {
   async create({ eventId, userId }: { eventId: string; userId: string }) {
     try {
       return await prisma.waitlist.create({
-        data: { eventId, userId, joinedAt: new Date() },
+        data: { eventId, userId, createdAt: new Date() },
       });
     } catch (err: any) {
       throw new ApiError(500, "DB_ERROR", err.message);
@@ -52,7 +52,7 @@ const WaitlistRepo = {
     try {
       return await prisma.waitlist.findMany({
         where: { eventId },
-        orderBy: { joinedAt: "asc" },
+        orderBy: { createdAt: "asc" },
         skip: offset,
         take: limit,
       });
@@ -69,7 +69,7 @@ const WaitlistRepo = {
       return await prisma.$transaction(async (tx) => {
         const next = await tx.waitlist.findFirst({
           where: { eventId },
-          orderBy: { joinedAt: "asc" },
+          orderBy: { createdAt: "asc" },
         });
 
         if (!next) return null;

@@ -39,7 +39,7 @@ const authService = {
 
       const user = await UserRepo.create({
         email,
-        passwordHash,
+        password,
         name: name ?? "", 
         role: "user",
       });

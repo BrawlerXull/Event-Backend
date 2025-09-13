@@ -3,7 +3,12 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "start": "node dist/server.js",
+    "build": "tsc",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio"
   },
   "author": "",
   "license": "ISC",
@@ -25,6 +30,7 @@
     "zod": "^4.1.8"
   },
   "devDependencies": {
-    "@types/node": "^24.3.3"
+    "@types/node": "^24.3.3",
+    "ts-node-dev": "^2.0.0"
   }
 }

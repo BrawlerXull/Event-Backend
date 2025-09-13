@@ -7,8 +7,7 @@ import logger from "./logger";
 
 const prisma = new PrismaClient();
 
-// Gracefully log before Prisma exits
-prisma.$on("beforeExit", async () => {
+(prisma as any).$on("beforeExit", async () => {
   logger.info("Prisma beforeExit");
 });
 

@@ -50,9 +50,9 @@ const EventRepo = {
       const where: any = {};
 
       if (from || to) {
-        where.date = {};
-        if (from) where.date.gte = new Date(from);
-        if (to) where.date.lte = new Date(to);
+        where.startTime = {};
+        if (from) where.startTime.gte = new Date(from);
+        if (to) where.startTime.lte = new Date(to);
       }
 
       if (q) {
@@ -66,7 +66,7 @@ const EventRepo = {
         where,
         skip: (page - 1) * limit,
         take: limit,
-        orderBy: { date: "asc" },
+        orderBy: { startTime: "asc" },
       });
 
       const total = await prisma.event.count({ where });

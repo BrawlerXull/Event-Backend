@@ -11,25 +11,25 @@ const UserRepo = {
   /**
    * Create a new user
    */
-  async create({
+    async create({
     email,
-    passwordHash,
+    password,
     name,
     role = "user",
-  }: {
+    }: {
     email: string;
-    passwordHash: string;
+    password: string;
     name: string;
     role?: string;
-  }) {
+    }) {
     try {
-      return await prisma.user.create({
-        data: { email, passwordHash, name, role },
-      });
+        return await prisma.user.create({
+        data: { email, password, name, role }, // ✅ matches schema
+        });
     } catch (err: any) {
-      throw new ApiError(500, "DB_ERROR", err.message);
+        throw new ApiError(500, "DB_ERROR", err.message);
     }
-  },
+    },
 
   /**
    * Find a user by email
