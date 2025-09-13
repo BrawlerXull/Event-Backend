@@ -1,0 +1,102 @@
+// Prisma schema for Evently
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String    @id @default(uuid())
+  email     String    @unique
+  password  String
+  name      String?
+  role      String    @default("user")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  bookings  Booking[]
+  waitlists Waitlist[]
+}
+
+model Event {
+  id                String    @id @default(uuid())
+  name              String
+  description       String?
+  venue             String
+  startTime         DateTime
+  endTime           DateTime
+  capacity          Int
+  availableCapacity Int
+  metadata          Json?
+  version           Int       @default(1)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  bookings          Booking[]
+  seats             Seat[]
+  waitlists         Waitlist[]
+  bookingAggregates  BookingAggregate[]  
+
+  @@index([startTime])
+}
+
+model Booking {
+  id             String   @id @default(uuid())
+  user           User     @relation(fields: [userId], references: [id])
+  userId         String
+  event          Event    @relation(fields: [eventId], references: [id])
+  eventId        String
+  status         String   @default("confirmed") // confirmed | cancelled | pending
+  seats          Int
+  seatIds        String[] // for seat-level booking
+  priceTotal     Float?
+  idempotencyKey String?   @db.VarChar(255)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([eventId])
+}
+
+model Seat {
+  id        String   @id @default(uuid())
+  event     Event    @relation(fields: [eventId], references: [id])
+  eventId   String
+  label     String
+  status    String   @default("available") // available | held | booked
+  heldUntil DateTime?
+  price     Float?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([eventId])
+}
+
+model Waitlist {
+  id        String   @id @default(uuid())
+  event     Event    @relation(fields: [eventId], references: [id])
+  eventId   String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  position  Int?
+  createdAt DateTime @default(now())
+
+  @@index([eventId])
+}
+
+model BookingAggregate {
+  id                  String   @id @default(uuid())
+  date                DateTime
+  event               Event    @relation(fields: [eventId], references: [id])
+  eventId             String
+  bookingsCount       Int      @default(0)
+  cancellationsCount  Int      @default(0)
+  capacityUtilization Float?
+  createdAt           DateTime @default(now())
+
+  @@index([eventId])
+}
+
+// After updating schema, run the following command to migrate:
+// npx prisma migrate dev --name init
