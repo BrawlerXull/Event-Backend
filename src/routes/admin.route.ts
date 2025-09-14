@@ -17,10 +17,15 @@ const router = Router();
  */
 const createEventSchema = z.object({
   name: z.string(),
+  description: z.string().optional(),
   venue: z.string(),
-  date: z.string(), // ISO date string
+  start_time: z.string(), // ISO string
+  end_time: z.string(),   // ISO string
   capacity: z.number().int().positive(),
+  metadata: z.any().optional(),
 });
+
+
 
 /**
  * POST /api/admin/events

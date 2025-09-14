@@ -13,31 +13,36 @@
 import { Worker } from "bullmq";
 import IORedis from "ioredis";
 import config from "../config";
-import bookingService from "../services/booking.service";
+import bookingService, { CreateBookingInput } from "../services/booking.service";
 import logger from "../utils/logger";
 
+
 /**
- * Create and start a booking worker.
- * @returns Worker instance bound to the "booking" queue
+ * Enqueue a new booking job.
+ *
+ * @param jobData - Payload for the booking job (e.g., userId, eventId, seats, idempotencyKey).
+ * @param opts - Optional BullMQ JobOptions (e.g., retries, backoff).
+ * @returns The ID of the added job.
  */
-export function createBookingWorker(): Worker {
+export function createBookingWorker() {
   const worker = new Worker(
     "booking",
     async (job) => {
       logger.info({ jobId: job.id }, "Processing booking job");
 
+      const data = job.data as CreateBookingInput;
+
       try {
-        const data = job.data;
-        await bookingService.createBooking(data);
+        const booking = await bookingService.createBooking(data);
+        logger.info({ jobId: job.id, bookingId: booking.id }, "Booking successful");
+        return booking;
       } catch (err) {
-        logger.error({ jobId: job.id, err }, "Booking job failed inside processor");
-        throw err; // Let BullMQ mark as failed
+        logger.error({ jobId: job.id, err }, "Booking job failed");
+        throw err; // BullMQ will mark as failed
       }
     },
     {
-      connection: new IORedis(config.REDIS_URL,{
-        maxRetriesPerRequest: null, 
-      }),
+      connection: new IORedis(config.REDIS_URL, { maxRetriesPerRequest: null }),
     }
   );
 

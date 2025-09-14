@@ -1,17 +1,18 @@
 /**
  * Booking Controller
  *
- * Handles creating and cancelling bookings.
+ * Handles creating bookings via queue and cancelling bookings directly.
  */
 
 import { Request, Response, NextFunction } from "express";
-import bookingService from "../services/booking.service";
-import { ApiError, createError } from "../utils/errors";
 import { z } from "zod";
+import { enqueueBookingJob } from "../queue/booking.producer";
+import { ApiError } from "../utils/errors";
+import bookingService from "../services/booking.service";
 
 const bookingController = {
   /**
-   * Create a booking for an event
+   * Create a booking (enqueue job)
    * @route POST /api/events/:eventId/book
    * @header Idempotency-Key optional
    * @body { seats: number, seat_ids?: string[], payment_method?: string }
@@ -31,9 +32,10 @@ const bookingController = {
       const userId = req.user?.id;
       if (!userId) throw new ApiError(401, "UNAUTHORIZED", "User not authenticated");
 
-      const idempotencyKey = req.header("Idempotency-Key") ?? undefined;
+      const idempotencyKey = req.header("Idempotency-Key");
 
-      const booking = await bookingService.createBooking({
+      // ✅ Push job to Redis queue instead of calling service directly
+      const jobId = await enqueueBookingJob({
         userId,
         eventId,
         seats: parsed.seats,
@@ -41,11 +43,11 @@ const bookingController = {
         idempotencyKey,
       });
 
-      res.status(201).json(booking);
+      res.status(202).json({
+        message: "Booking request queued",
+        jobId,
+      });
     } catch (err: any) {
-      if (err instanceof ApiError && err.code === "EVENT_FULL") {
-        return res.status(409).json({ error: { code: err.code, message: err.message } });
-      }
       if (err instanceof z.ZodError) {
         return res.status(400).json({ error: { code: "VALIDATION_ERROR", details: err.format() } });
       }

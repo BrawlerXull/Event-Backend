@@ -1,0 +1,46 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: evently
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+  app:
+    build: .
+    command: npm run dev # use "npm start" in production
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/evently
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: please_change
+    depends_on:
+      - postgres
+      - redis
+    ports:
+      - "4000:4000"
+
+volumes:
+  pgdata:
+
+# =========================
+#  Usage Notes
+# =========================
+# - Run locally with:
+#     docker-compose up --build
+#
+# - If using Prisma or another migration tool, after containers are running:
+#     docker-compose exec app npx prisma migrate dev
+#
+# - For production, switch "npm run dev" → "npm start"
+#   and handle secrets via environment variables/secrets manager.

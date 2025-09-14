@@ -7,6 +7,8 @@
 import EventRepo from "../repositories/event.repo";
 import { ApiError } from "../utils/errors";
 import analyticsService from "./analytics.service";
+import { EventCreateDTO } from "./event.service";
+import { Event as PrismaEvent } from "@prisma/client";
 
 type GroupBy = "day" | "week" | "month";
 
@@ -15,19 +17,22 @@ const adminService = {
    * Create a new event
    * @param payload - Event data
    */
-  async createEvent(payload: any) {
-    try {
-      if (!payload.capacity || payload.capacity <= 0) {
-        throw new ApiError(400, "INVALID_INPUT", "Event capacity must be a positive number");
-      }
+    async createEvent(payload: EventCreateDTO): Promise<PrismaEvent> {
+        const event = await EventRepo.create({
+            name: payload.name,
+            description: payload.description,
+            venue: payload.venue,
+            startTime: new Date(payload.start_time),
+            endTime: new Date(payload.end_time),
+            capacity: payload.capacity,
+            availableCapacity: payload.capacity,
+            metadata: payload.metadata ?? {},
+        });
 
-      const event = await EventRepo.create(payload);
-      return event;
-    } catch (err: any) {
-      if (err instanceof ApiError) throw err;
-      throw new ApiError(500, "EVENT_CREATION_FAILED", err.message);
-    }
-  },
+        return event;
+    },
+
+
 
   /**
    * Update an existing event
